@@ -1,25 +1,38 @@
 import { useState, useEffect } from "react";
-import { generateClient } from "aws-amplify/data";
-import type { Schema } from "@/amplify/data/resource";
-
-const client = generateClient<Schema>();
+import { Todo } from "@/types";
+import type { EventsChannel } from 'aws-amplify/data';
+import { events } from 'aws-amplify/data';
 
 export default function App() {
-  const [todos, setTodos] = useState<Array<Schema["Todo"]["type"]>>([]);
-
-  function listTodos() {
-    client.models.Todo.observeQuery().subscribe({
-      next: (data) => setTodos([...data.items]),
-    });
-  }
+  const [todos, setTodos] = useState<Todo[]>([]);
 
   useEffect(() => {
-    listTodos();
+    let channel: EventsChannel;
+
+    const connectAndSubscribe = async () => {
+      channel = await events.connect('default/todo');
+
+      channel.subscribe({
+        next: (data) => {
+          console.log('received', data);
+          const todo = {
+            id: data.id,
+            content: data.event.content
+          }
+          setTodos([...todos, todo]);
+        },
+        error: (err) => console.error('error', err)
+      });
+    };
+
+    connectAndSubscribe();
+
+    return () => channel && channel.close();
   }, []);
 
-  function createTodo() {
-    client.models.Todo.create({
-      content: window.prompt("Todo content"),
+  async function createTodo() {
+    await events.post('default/todo', {
+      content: 'New todo',
     });
   }
 
