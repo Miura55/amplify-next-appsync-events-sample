@@ -12,7 +12,7 @@ Amplify.configure({
       ...outputs.API.Events,
       endpoint: outputs.API.Events.endpoint,
       region: outputs.API.Events.region,
-      defaultAuthMode: outputs.API.Events.defaultAuthMode,
+      defaultAuthMode: "apiKey", 
       apiKey: outputs.API.Events.apiKey,
     },
   },
